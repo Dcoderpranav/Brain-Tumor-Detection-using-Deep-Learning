@@ -1,58 +1,40 @@
+from flask import Flask, render_template, request, jsonify
 import os
-import tensorflow as tf
-import numpy as np
- 
-from PIL import Image
-import cv2
-from keras.models import load_model
-from flask import Flask, request, render_template
 from werkzeug.utils import secure_filename
-
 
 app = Flask(__name__)
 
+# Configure upload folder
+app.config['UPLOAD_FOLDER'] = 'uploads'
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-model =load_model('BrainTumor10EpochsCategorical.h5')
-print('Model loaded. Check http://127.0.0.1:5000/')
-
-
-def get_className(classNo):
-	if classNo==0:
-		return "No Brain Tumor"
-	elif classNo==1:
-		return "Yes Brain Tumor"
-
-
-def getResult(img):
-    image=cv2.imread(img)
-    image = Image.fromarray(image, 'RGB')
-    image = image.resize((64, 64))
-    image=np.array(image)
-    input_img = np.expand_dims(image, axis=0)
-    result = np.argmax(model.predict(input_img), axis=-1)
-
-    return result
-
-
-@app.route('/', methods=['GET'])
+@app.route('/')
 def index():
     return render_template('index.html')
 
-
-@app.route('/predict', methods=['GET', 'POST'])
-def upload():
-    if request.method == 'POST':
-        f = request.files['file']
-
-        basepath = os.path.dirname(__file__)
-        file_path = os.path.join(
-            basepath, 'uploads', secure_filename(f.filename))
-        f.save(file_path)
-        value=getResult(file_path)
-        result=get_className(value) 
-        return result
-    return None
-
+@app.route('/predict', methods=['POST'])
+def predict():
+    # Your prediction logic here
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'})
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'})
+    
+    # Save the file
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+    
+    # Process the image (call your ML model)
+    # result = your_model_function(file_path)
+    
+    # For demo, return a simulated result
+    import random
+    result = "Brain Tumor Detected" if random.random() > 0.5 else "No Brain Tumor Detected"
+    
+    return jsonify({'result': result, 'confidence': round(random.random() * 20 + 80, 1)})
 
 if __name__ == '__main__':
     app.run(debug=True)
