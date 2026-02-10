@@ -1,14 +1,17 @@
 {
   "builds": [
     {
-      "src": "index.html",
-      "use": "@vercel/static"
+      "src": "app.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "app.py"
     }
-  ]
+  ],
+  "env": {
+    "PYTHONPATH": "/var/task"
+  }
 }

@@ -1,16 +1,37 @@
-# Dependencies
-node_modules/
-.vscode/
-
-# Environment variables
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
 .env
-.env.local
+.venv/
+venv/
+ENV/
+env/
 
-# Build outputs
-.next/
-dist/
+# Virtual Environment
+.venv
+env/
+venv/
 
-# System files
+# Dataset
+dataset/
+uploads/
+
+# Model files (if large)
+*.h5
+*.pth
+*.pt
+*.pkl
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
 Thumbs.db
 
