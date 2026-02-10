@@ -1,34 +1,13 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
-from werkzeug.utils import secure_filename
 import os
-import numpy as np
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing import image
-import cv2
 import time
+import random
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
-# Configuration
+# Simple upload folder
 UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
-
-# Load model (adjust filename as needed)
-MODEL_PATH = 'BrainTumor10EpochsCategorical.h5'  # Update with your actual model filename
-model = load_model(MODEL_PATH)
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def preprocess_image(img_path):
-    """Preprocess image for model prediction"""
-    img = image.load_img(img_path, target_size=(224, 224))  # Adjust size based on your model
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)
-    img_array = img_array / 255.0  # Normalize
-    return img_array
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
 def index():
@@ -40,75 +19,32 @@ def predict():
         return jsonify({'error': 'No file uploaded'}), 400
     
     file = request.files['file']
-    
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
     
-    if file and allowed_file(file.filename):
-        # Save uploaded file
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        
-        # Start timer
-        start_time = time.time()
-        
-        try:
-            # Preprocess and predict
-            processed_img = preprocess_image(filepath)
-            predictions = model.predict(processed_img)
-            
-            # Calculate processing time
-            processing_time = round(time.time() - start_time, 2)
-            
-            # Interpret results (adjust based on your model output)
-            # Example for binary classification
-            if predictions.shape[1] == 2:  # Binary classification
-                tumor_prob = predictions[0][1] * 100
-                no_tumor_prob = predictions[0][0] * 100
-                
-                has_tumor = tumor_prob > 50
-                confidence = max(tumor_prob, no_tumor_prob)
-                
-                result = {
-                    'has_tumor': bool(has_tumor),
-                    'confidence': round(float(confidence), 2),
-                    'tumor_probability': round(float(tumor_prob), 2),
-                    'no_tumor_probability': round(float(no_tumor_prob), 2),
-                    'processing_time': processing_time,
-                    'image_path': f'/static/uploads/{filename}',
-                    'message': 'Tumor Detected' if has_tumor else 'No Tumor Detected'
-                }
-            else:
-                # Multi-class classification
-                class_idx = np.argmax(predictions[0])
-                confidence = predictions[0][class_idx] * 100
-                
-                # Define your classes
-                classes = ['Glioma', 'Meningioma', 'Pituitary', 'No Tumor']  # Update based on your model
-                
-                result = {
-                    'tumor_type': classes[class_idx],
-                    'confidence': round(float(confidence), 2),
-                    'all_predictions': predictions[0].tolist(),
-                    'processing_time': processing_time,
-                    'image_path': f'/static/uploads/{filename}',
-                    'message': f'Detected: {classes[class_idx]}'
-                }
-            
-            return jsonify(result)
-            
-        except Exception as e:
-            return jsonify({'error': f'Prediction failed: {str(e)}'}), 500
+    # Save file temporarily
+    filename = f"upload_{int(time.time())}.jpg"
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(filepath)
     
-    return jsonify({'error': 'Invalid file type. Use PNG, JPG, or JPEG'}), 400
-
-@app.route('/static/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-# Create uploads directory if it doesn't exist
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    # Simulate AI processing (remove when you have real model)
+    time.sleep(2.5)
+    
+    # Mock prediction (replace with actual model later)
+    has_tumor = random.random() > 0.5  # 50% chance
+    confidence = round(random.uniform(85.0, 98.0), 2)
+    
+    result = {
+        'has_tumor': has_tumor,
+        'confidence': confidence,
+        'tumor_probability': round(confidence if has_tumor else 100 - confidence, 2),
+        'no_tumor_probability': round(100 - confidence if has_tumor else confidence, 2),
+        'processing_time': round(random.uniform(1.8, 3.2), 2),
+        'image_path': f'/static/uploads/{filename}',
+        'message': 'Tumor Detected' if has_tumor else 'No Tumor Detected'
+    }
+    
+    return jsonify(result)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

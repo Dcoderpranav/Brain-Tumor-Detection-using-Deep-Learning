@@ -1,0 +1,19 @@
+'EOF'
+[tool.poetry]
+name = "brain-tumor-detection"
+version = "1.0.0"
+description = "Brain Tumor Detection App"
+authors = ["Your Name <your@email.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+flask = "2.3.2"
+tensorflow-cpu = "2.11.0"
+numpy = "1.24.2"
+pillow = "9.5.0"
+gunicorn = "20.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+EOF
